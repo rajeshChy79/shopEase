@@ -1,0 +1,4 @@
+- TypeScript config files (tsconfig.json, tsconfig.app.json, tsconfig.node.json) should be deleted.
+- src/vite-env.d.ts should be deleted.
+- vite.config.ts should be deleted (already replaced with vite.config.js).
+- package.json and eslint.config.js updated for JS/JSX only.
