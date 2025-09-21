@@ -12,9 +12,9 @@ const ProductCard = ({ product, className = '' }) => {
   const handleAddToCart = async (e) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     if (!isAuthenticated()) {
-      // Handle unauthenticated user
+      // Handle unauthenticated user (show login popup maybe)
       return;
     }
 
@@ -25,18 +25,18 @@ const ProductCard = ({ product, className = '' }) => {
   };
 
   return (
-    <Link 
+    <Link
       to={`/product/${product._id}`}
       className={`group bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden border border-gray-100 hover:border-primary-200 ${className}`}
     >
       {/* Product Image */}
       <div className="relative aspect-square overflow-hidden bg-gray-100">
         <img
-          src={product.productImage?.[0] || '/api/placeholder/300/300'}
-          alt={product.productName}
+          src={(Array.isArray(product.productImage) && product.productImage[0]) || '/api/placeholder/300/300'}
+          alt={product.productName || 'Product'}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
-        
+
         {/* Overlay Actions */}
         <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
           <div className="flex space-x-2">
@@ -64,16 +64,16 @@ const ProductCard = ({ product, className = '' }) => {
       <div className="p-4">
         <div className="mb-2">
           <span className="text-xs text-primary-600 font-medium bg-primary-50 px-2 py-1 rounded-md">
-            {product.category}
+            {String(product.category || "Uncategorized")}
           </span>
         </div>
-        
+
         <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-primary-700 transition-colors">
-          {product.productName}
+          {product.productName || "Unnamed Product"}
         </h3>
-        
+
         <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-          {product.description}
+          {product.description || "No description available"}
         </p>
 
         {/* Rating */}
@@ -83,15 +83,15 @@ const ProductCard = ({ product, className = '' }) => {
               <Star
                 key={i}
                 className={`w-4 h-4 ${
-                  i < (product.rating || 4) 
-                    ? 'text-yellow-400 fill-current' 
+                  i < Number(product.rating || 4)
+                    ? 'text-yellow-400 fill-current'
                     : 'text-gray-300'
                 }`}
               />
             ))}
           </div>
           <span className="ml-2 text-sm text-gray-600">
-            ({product.reviews || 0} reviews)
+            ({Array.isArray(product.reviews) ? product.reviews.length : product.reviews || 0} reviews)
           </span>
         </div>
 
@@ -107,7 +107,7 @@ const ProductCard = ({ product, className = '' }) => {
               </span>
             )}
           </div>
-          
+
           {product.sellingPrice < product.price && (
             <div className="text-sm text-green-600 font-medium">
               {Math.round(((product.price - product.sellingPrice) / product.price) * 100)}% off

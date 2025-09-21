@@ -1,5 +1,5 @@
 import React from 'react';
-import { createBrowserRouter, Navigate, useLocation } from 'react-router-dom';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 
 // Layout
@@ -9,22 +9,30 @@ import Layout from './Layout';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ProductDetails from './pages/ProductDetails';
+import CategoryPage from './pages/CategoryPage';
 import Cart from './pages/Cart';
+import Checkout from './pages/Checkout';
+import Orders from './pages/Orders';
+import Profile from './pages/Profile';
+
+// Admin Pages
+import Dashboard from './pages/Admin/Dashboard';
+import UploadProduct from './pages/Admin/UploadProduct';
+import ManageUsers from './pages/Admin/ManageUsers';
 
 // Protected Route wrapper
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
-  const location = useLocation();
-
+  
   if (loading) {
     return <div className="min-h-screen bg-gray-50 flex items-center justify-center">Loading...</div>;
   }
-
+  
   if (!isAuthenticated()) {
-    // Pass the current location so login can redirect back
-    return <Navigate to="/login" replace state={{ from: location }} />;
+    return <Navigate to="/login" replace />;
   }
-
+  
   return children;
 };
 
@@ -61,11 +69,67 @@ export const router = createBrowserRouter([
         element: <Register />,
       },
       {
+        path: 'product/:id',
+        element: <ProductDetails />,
+      },
+      {
+        path: 'category/:category',
+        element: <CategoryPage />,
+      },
+      {
         path: 'cart',
         element: (
           <ProtectedRoute>
             <Cart />
           </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'checkout',
+        element: (
+          <ProtectedRoute>
+            <Checkout />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'orders',
+        element: (
+          <ProtectedRoute>
+            <Orders />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'profile',
+        element: (
+          <ProtectedRoute>
+            <Profile />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'admin',
+        element: (
+          <AdminRoute>
+            <Dashboard />
+          </AdminRoute>
+        ),
+      },
+      {
+        path: 'admin/upload-product',
+        element: (
+          <AdminRoute>
+            <UploadProduct />
+          </AdminRoute>
+        ),
+      },
+      {
+        path: 'admin/users',
+        element: (
+          <AdminRoute>
+            <ManageUsers />
+          </AdminRoute>
         ),
       },
     ],
