@@ -1,122 +1,130 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { 
-  CreditCard, 
-  MapPin, 
-  User, 
-  Phone, 
-  Mail, 
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  CreditCard,
+  MapPin,
+  User,
+  Phone,
+  Mail,
   Lock,
   CheckCircle,
-  ArrowLeft
-} from 'lucide-react';
-import { useCart } from '../context/CartContext';
-import { useAuth } from '../context/AuthContext';
-import { orderApi } from '../api/orderApi';
-import { formatPrice } from '../helpers/displayCurrency';
-import { LoadingSpinner } from '../components/Loader';
+  ArrowLeft,
+} from "lucide-react";
+import { useCart } from "../context/CartContext";
+import { useAuth } from "../context/AuthContext";
+import { orderApi } from "../api/orderApi";
+import { formatPrice } from "../helpers/displayCurrency";
+import { LoadingSpinner } from "../components/Loader";
 
 const Checkout = () => {
   const navigate = useNavigate();
   const { cartItems, getCartTotal, clearCart } = useCart();
   const { user, isAuthenticated } = useAuth();
-  
+
   const [loading, setLoading] = useState(false);
+  const [placedOrder, setPlacedOrder] = useState(null);
   const [step, setStep] = useState(1); // 1: Address, 2: Payment, 3: Confirmation
   const [orderData, setOrderData] = useState({
     shippingAddress: {
-      fullName: user?.name || '',
-      email: user?.email || '',
-      phone: '',
-      address: '',
-      city: '',
-      state: '',
-      pincode: '',
-      country: 'India'
+      fullName: user?.name || "",
+      email: user?.email || "",
+      phone: "",
+      address: "",
+      city: "",
+      state: "",
+      pincode: "",
+      country: "India",
     },
-    paymentMethod: 'card',
+    paymentMethod: "card",
     cardDetails: {
-      cardNumber: '',
-      expiryDate: '',
-      cvv: '',
-      cardholderName: ''
-    }
+      cardNumber: "",
+      expiryDate: "",
+      cvv: "",
+      cardholderName: "",
+    },
   });
 
   useEffect(() => {
     if (!isAuthenticated()) {
-      navigate('/login');
+      navigate("/login");
       return;
     }
-    
-    if (cartItems.length === 0) {
-      navigate('/cart');
+
+    if (cartItems.length === 0 && step !== 3) {
+      navigate("/cart");
       return;
     }
   }, [isAuthenticated, cartItems, navigate]);
 
   const handleInputChange = (section, field, value) => {
-    setOrderData(prev => ({
+    setOrderData((prev) => ({
       ...prev,
       [section]: {
         ...prev[section],
-        [field]: value
-      }
+        [field]: value,
+      },
     }));
   };
 
   const validateStep1 = () => {
     const { shippingAddress } = orderData;
-    return shippingAddress.fullName && 
-           shippingAddress.email && 
-           shippingAddress.phone && 
-           shippingAddress.address && 
-           shippingAddress.city && 
-           shippingAddress.state && 
-           shippingAddress.pincode;
+    return (
+      shippingAddress.fullName &&
+      shippingAddress.email &&
+      shippingAddress.phone &&
+      shippingAddress.address &&
+      shippingAddress.city &&
+      shippingAddress.state &&
+      shippingAddress.pincode
+    );
   };
 
   const validateStep2 = () => {
-    if (orderData.paymentMethod === 'cod') return true;
-    
+    if (orderData.paymentMethod === "cod") return true;
+
     const { cardDetails } = orderData;
-    return cardDetails.cardNumber && 
-           cardDetails.expiryDate && 
-           cardDetails.cvv && 
-           cardDetails.cardholderName;
+    return (
+      cardDetails.cardNumber &&
+      cardDetails.expiryDate &&
+      cardDetails.cvv &&
+      cardDetails.cardholderName
+    );
   };
 
   const handlePlaceOrder = async () => {
     setLoading(true);
-    
+
     try {
       const orderPayload = {
-        items: cartItems.map(item => ({
+        items: cartItems.map((item) => ({
           productId: item.productId._id,
           quantity: item.quantity,
-          price: item.productId.sellingPrice
+          price: item.productId.sellingPrice,
         })),
         shippingAddress: orderData.shippingAddress,
         paymentMethod: orderData.paymentMethod,
-        totalAmount: getCartTotal() + (getCartTotal() > 999 ? 0 : 99)
+        totalAmount: getCartTotal() + (getCartTotal() > 999 ? 0 : 99),
       };
 
       const response = await orderApi.createOrder(orderPayload);
-      
-      if (response.success) {
-        // If payment method is COD, order is placed successfully
-        if (orderData.paymentMethod === 'cod') {
-          clearCart();
-          setStep(3);
-        } else {
-          // Handle online payment verification
-          // In a real app, you would integrate with payment gateway
-          clearCart();
-          setStep(3);
-        }
+
+      if (response?.success) {
+        // ✅ Store placed order
+        setPlacedOrder(response.data);
+
+        // ✅ Clear cart after successful order
+        clearCart();
+
+        // ✅ Go to confirmation step
+        setStep(3);
+      } else {
+        console.error(
+          "Order creation failed:",
+          response?.message || "Unknown error"
+        );
       }
     } catch (error) {
-      console.error('Error placing order:', error);
+      console.error("Error placing order:", error);
     } finally {
       setLoading(false);
     }
@@ -140,17 +148,18 @@ const Checkout = () => {
             Order Placed Successfully!
           </h2>
           <p className="text-gray-600 mb-6">
-            Thank you for your order. You will receive a confirmation email shortly.
+            Thank you for your order. You will receive a confirmation email
+            shortly.
           </p>
           <div className="space-y-3">
             <button
-              onClick={() => navigate('/orders')}
+              onClick={() => navigate("/orders")}
               className="w-full bg-primary-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-primary-700 transition-colors"
             >
               View Orders
             </button>
             <button
-              onClick={() => navigate('/')}
+              onClick={() => navigate("/")}
               className="w-full border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-50 transition-colors"
             >
               Continue Shopping
@@ -167,7 +176,7 @@ const Checkout = () => {
         {/* Header */}
         <div className="flex items-center mb-8">
           <button
-            onClick={() => navigate('/cart')}
+            onClick={() => navigate("/cart")}
             className="flex items-center space-x-2 text-gray-600 hover:text-primary-600 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -178,22 +187,54 @@ const Checkout = () => {
         {/* Progress Steps */}
         <div className="flex items-center justify-center mb-8">
           <div className="flex items-center space-x-4">
-            <div className={`flex items-center space-x-2 ${step >= 1 ? 'text-primary-600' : 'text-gray-400'}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 1 ? 'bg-primary-600 text-white' : 'bg-gray-200'}`}>
+            <div
+              className={`flex items-center space-x-2 ${
+                step >= 1 ? "text-primary-600" : "text-gray-400"
+              }`}
+            >
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                  step >= 1 ? "bg-primary-600 text-white" : "bg-gray-200"
+                }`}
+              >
                 1
               </div>
               <span className="font-medium">Shipping</span>
             </div>
-            <div className={`w-12 h-0.5 ${step >= 2 ? 'bg-primary-600' : 'bg-gray-200'}`}></div>
-            <div className={`flex items-center space-x-2 ${step >= 2 ? 'text-primary-600' : 'text-gray-400'}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 2 ? 'bg-primary-600 text-white' : 'bg-gray-200'}`}>
+            <div
+              className={`w-12 h-0.5 ${
+                step >= 2 ? "bg-primary-600" : "bg-gray-200"
+              }`}
+            ></div>
+            <div
+              className={`flex items-center space-x-2 ${
+                step >= 2 ? "text-primary-600" : "text-gray-400"
+              }`}
+            >
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                  step >= 2 ? "bg-primary-600 text-white" : "bg-gray-200"
+                }`}
+              >
                 2
               </div>
               <span className="font-medium">Payment</span>
             </div>
-            <div className={`w-12 h-0.5 ${step >= 3 ? 'bg-primary-600' : 'bg-gray-200'}`}></div>
-            <div className={`flex items-center space-x-2 ${step >= 3 ? 'text-primary-600' : 'text-gray-400'}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 3 ? 'bg-primary-600 text-white' : 'bg-gray-200'}`}>
+            <div
+              className={`w-12 h-0.5 ${
+                step >= 3 ? "bg-primary-600" : "bg-gray-200"
+              }`}
+            ></div>
+            <div
+              className={`flex items-center space-x-2 ${
+                step >= 3 ? "text-primary-600" : "text-gray-400"
+              }`}
+            >
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                  step >= 3 ? "bg-primary-600 text-white" : "bg-gray-200"
+                }`}
+              >
                 3
               </div>
               <span className="font-medium">Confirmation</span>
@@ -209,7 +250,7 @@ const Checkout = () => {
                 <h2 className="text-xl font-semibold text-gray-900 mb-6">
                   Shipping Address
                 </h2>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -220,7 +261,13 @@ const Checkout = () => {
                       <input
                         type="text"
                         value={orderData.shippingAddress.fullName}
-                        onChange={(e) => handleInputChange('shippingAddress', 'fullName', e.target.value)}
+                        onChange={(e) =>
+                          handleInputChange(
+                            "shippingAddress",
+                            "fullName",
+                            e.target.value
+                          )
+                        }
                         className="pl-10 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                         placeholder="Enter your full name"
                       />
@@ -236,7 +283,13 @@ const Checkout = () => {
                       <input
                         type="email"
                         value={orderData.shippingAddress.email}
-                        onChange={(e) => handleInputChange('shippingAddress', 'email', e.target.value)}
+                        onChange={(e) =>
+                          handleInputChange(
+                            "shippingAddress",
+                            "email",
+                            e.target.value
+                          )
+                        }
                         className="pl-10 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                         placeholder="Enter your email"
                       />
@@ -252,7 +305,13 @@ const Checkout = () => {
                       <input
                         type="tel"
                         value={orderData.shippingAddress.phone}
-                        onChange={(e) => handleInputChange('shippingAddress', 'phone', e.target.value)}
+                        onChange={(e) =>
+                          handleInputChange(
+                            "shippingAddress",
+                            "phone",
+                            e.target.value
+                          )
+                        }
                         className="pl-10 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                         placeholder="Enter your phone number"
                       />
@@ -266,7 +325,13 @@ const Checkout = () => {
                     <input
                       type="text"
                       value={orderData.shippingAddress.pincode}
-                      onChange={(e) => handleInputChange('shippingAddress', 'pincode', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange(
+                          "shippingAddress",
+                          "pincode",
+                          e.target.value
+                        )
+                      }
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                       placeholder="Enter PIN code"
                     />
@@ -280,7 +345,13 @@ const Checkout = () => {
                       <MapPin className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
                       <textarea
                         value={orderData.shippingAddress.address}
-                        onChange={(e) => handleInputChange('shippingAddress', 'address', e.target.value)}
+                        onChange={(e) =>
+                          handleInputChange(
+                            "shippingAddress",
+                            "address",
+                            e.target.value
+                          )
+                        }
                         rows={3}
                         className="pl-10 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                         placeholder="Enter your complete address"
@@ -295,7 +366,13 @@ const Checkout = () => {
                     <input
                       type="text"
                       value={orderData.shippingAddress.city}
-                      onChange={(e) => handleInputChange('shippingAddress', 'city', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange(
+                          "shippingAddress",
+                          "city",
+                          e.target.value
+                        )
+                      }
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                       placeholder="Enter city"
                     />
@@ -308,7 +385,13 @@ const Checkout = () => {
                     <input
                       type="text"
                       value={orderData.shippingAddress.state}
-                      onChange={(e) => handleInputChange('shippingAddress', 'state', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange(
+                          "shippingAddress",
+                          "state",
+                          e.target.value
+                        )
+                      }
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                       placeholder="Enter state"
                     />
@@ -341,24 +424,37 @@ const Checkout = () => {
                       id="card"
                       name="paymentMethod"
                       value="card"
-                      checked={orderData.paymentMethod === 'card'}
-                      onChange={(e) => setOrderData(prev => ({ ...prev, paymentMethod: e.target.value }))}
+                      checked={orderData.paymentMethod === "card"}
+                      onChange={(e) =>
+                        setOrderData((prev) => ({
+                          ...prev,
+                          paymentMethod: e.target.value,
+                        }))
+                      }
                       className="w-4 h-4 text-primary-600 focus:ring-primary-500"
                     />
-                    <label htmlFor="card" className="flex items-center space-x-2 cursor-pointer">
+                    <label
+                      htmlFor="card"
+                      className="flex items-center space-x-2 cursor-pointer"
+                    >
                       <CreditCard className="w-5 h-5 text-gray-600" />
                       <span>Credit/Debit Card</span>
                     </label>
                   </div>
-                  
+
                   <div className="flex items-center space-x-3">
                     <input
                       type="radio"
                       id="cod"
                       name="paymentMethod"
                       value="cod"
-                      checked={orderData.paymentMethod === 'cod'}
-                      onChange={(e) => setOrderData(prev => ({ ...prev, paymentMethod: e.target.value }))}
+                      checked={orderData.paymentMethod === "cod"}
+                      onChange={(e) =>
+                        setOrderData((prev) => ({
+                          ...prev,
+                          paymentMethod: e.target.value,
+                        }))
+                      }
                       className="w-4 h-4 text-primary-600 focus:ring-primary-500"
                     />
                     <label htmlFor="cod" className="cursor-pointer">
@@ -368,7 +464,7 @@ const Checkout = () => {
                 </div>
 
                 {/* Card Details */}
-                {orderData.paymentMethod === 'card' && (
+                {orderData.paymentMethod === "card" && (
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -377,7 +473,13 @@ const Checkout = () => {
                       <input
                         type="text"
                         value={orderData.cardDetails.cardholderName}
-                        onChange={(e) => handleInputChange('cardDetails', 'cardholderName', e.target.value)}
+                        onChange={(e) =>
+                          handleInputChange(
+                            "cardDetails",
+                            "cardholderName",
+                            e.target.value
+                          )
+                        }
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                         placeholder="Name on card"
                       />
@@ -392,7 +494,13 @@ const Checkout = () => {
                         <input
                           type="text"
                           value={orderData.cardDetails.cardNumber}
-                          onChange={(e) => handleInputChange('cardDetails', 'cardNumber', e.target.value)}
+                          onChange={(e) =>
+                            handleInputChange(
+                              "cardDetails",
+                              "cardNumber",
+                              e.target.value
+                            )
+                          }
                           className="pl-10 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                           placeholder="1234 5678 9012 3456"
                         />
@@ -407,12 +515,18 @@ const Checkout = () => {
                         <input
                           type="text"
                           value={orderData.cardDetails.expiryDate}
-                          onChange={(e) => handleInputChange('cardDetails', 'expiryDate', e.target.value)}
+                          onChange={(e) =>
+                            handleInputChange(
+                              "cardDetails",
+                              "expiryDate",
+                              e.target.value
+                            )
+                          }
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                           placeholder="MM/YY"
                         />
                       </div>
-                      
+
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           CVV
@@ -422,7 +536,13 @@ const Checkout = () => {
                           <input
                             type="text"
                             value={orderData.cardDetails.cvv}
-                            onChange={(e) => handleInputChange('cardDetails', 'cvv', e.target.value)}
+                            onChange={(e) =>
+                              handleInputChange(
+                                "cardDetails",
+                                "cvv",
+                                e.target.value
+                              )
+                            }
                             className="pl-10 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                             placeholder="123"
                           />
@@ -439,7 +559,7 @@ const Checkout = () => {
                   >
                     Back to Shipping
                   </button>
-                  
+
                   <button
                     onClick={handlePlaceOrder}
                     disabled={!validateStep2()}
@@ -458,12 +578,18 @@ const Checkout = () => {
               <h3 className="text-lg font-semibold text-gray-900 mb-4">
                 Order Summary
               </h3>
-              
+
               <div className="space-y-3 mb-4">
                 {cartItems.map((item) => (
-                  <div key={item.productId._id} className="flex items-center space-x-3">
+                  <div
+                    key={item.productId._id}
+                    className="flex items-center space-x-3"
+                  >
                     <img
-                      src={item.productId.productImage?.[0] || '/api/placeholder/60/60'}
+                      src={
+                        item.productId.productImage?.[0] ||
+                        "/api/placeholder/60/60"
+                      }
                       alt={item.productId.productName}
                       className="w-12 h-12 rounded-lg object-cover"
                     />
@@ -487,14 +613,14 @@ const Checkout = () => {
                   <span className="text-gray-600">Subtotal</span>
                   <span className="font-medium">{formatPrice(subtotal)}</span>
                 </div>
-                
+
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Shipping</span>
                   <span className="font-medium">
-                    {shipping === 0 ? 'Free' : formatPrice(shipping)}
+                    {shipping === 0 ? "Free" : formatPrice(shipping)}
                   </span>
                 </div>
-                
+
                 <div className="flex justify-between text-lg font-semibold pt-2 border-t">
                   <span>Total</span>
                   <span>{formatPrice(total)}</span>

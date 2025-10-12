@@ -12,4 +12,9 @@ router.get("/logout", userController.logout);
 router.get("/all", authToken, userController.getAllUsers);
 router.post("/update", authToken, userController.updateUser);
 
+// New
+router.patch("/:id/activate", userController.activateUser);
+router.patch("/:id/deactivate", userController.deactivateUser);
+router.delete("/:id", userController.deleteUser);
+
 module.exports = router;

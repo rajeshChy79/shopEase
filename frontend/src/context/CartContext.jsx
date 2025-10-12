@@ -34,6 +34,7 @@ export const CartProvider = ({ children }) => {
         cartApi.viewCart(),
         cartApi.getCartCount(),
       ]);
+      console.log("cartResponse", cartResponse);
       
       if (cartResponse.success) {
         setCartItems(cartResponse.data);
@@ -93,8 +94,9 @@ export const CartProvider = ({ children }) => {
     setCartCount(0);
   };
 
+  console.log("cartItems in context", cartItems);
   const getCartTotal = () => {
-    return cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+    return cartItems.reduce((total, item) => total + (item?.productId?.sellingPrice * item?.quantity), 0);
   };
 
   const value = {

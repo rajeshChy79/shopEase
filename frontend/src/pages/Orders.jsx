@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { formatPrice } from "../helpers/displayCurrency";
 import { LoadingSpinner } from "../components/Loader";
-// import { orderApi } from "../api/orderApi"; // 👉 Uncomment when API ready
+import { orderApi } from "../api/orderApi"; // 👉 Uncomment when API ready
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
@@ -21,18 +21,14 @@ const Orders = () => {
   const [error, setError] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
-
   const fetchOrders = async () => {
     try {
       setLoading(true);
       setError(null);
 
       // 👉 Replace mock with actual API call
-      // const response = await orderApi.getUserOrders();
-      // setOrders(response.data);
+      const response = await orderApi.getMyOrders();
+      setOrders(response.data);
 
       // Mock orders for testing
       const mockOrders = [
@@ -92,7 +88,7 @@ const Orders = () => {
         },
       ];
 
-      setOrders(mockOrders);
+      //setOrders(mockOrders);
     } catch (err) {
       console.error("Error fetching orders:", err);
       setError("Failed to load your orders. Please try again.");
@@ -100,6 +96,9 @@ const Orders = () => {
       setLoading(false);
     }
   };
+  useEffect(() => {
+    fetchOrders();
+  }, []);
 
   const getStatusIcon = (status) => {
     switch (status) {

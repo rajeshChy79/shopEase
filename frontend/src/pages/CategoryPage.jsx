@@ -25,8 +25,14 @@ const CategoryPage = () => {
 
   const fetchCategoryProducts = async () => {
     try {
-      setLoading(true);
-      const response = await productApi.getProductsByCategory(category);
+    setLoading(true);
+    let response;
+    //response = await productApi.getProductsByCategory(category);
+    if (category) {
+     response = await productApi.getProductsByCategory(category);
+    } else {
+    response = await productApi.getCategories();
+     }
 
       if (response.success) {
         let filteredProducts = response.data;

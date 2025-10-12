@@ -1,5 +1,5 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingCart, Heart, Star } from 'lucide-react';
 import { formatPrice } from '../helpers/displayCurrency';
 import { useCart } from '../context/CartContext';
@@ -8,6 +8,8 @@ import { useAuth } from '../context/AuthContext';
 const ProductCard = ({ product, className = '' }) => {
   const { addToCart } = useCart();
   const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const [showBuyNowMenu, setShowBuyNowMenu] = useState(false);
 
   const handleAddToCart = async (e) => {
     e.preventDefault();
@@ -22,6 +24,25 @@ const ProductCard = ({ product, className = '' }) => {
       productId: product._id,
       quantity: 1,
     });
+  };
+
+  const handleBuyNow = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!isAuthenticated()) {
+      navigate('/login');
+      return;
+    }
+
+    // First add product to cart
+    await addToCart({
+      productId: product._id,
+      quantity: 1,
+    });
+
+    // Redirect to checkout
+    navigate('/checkout');
   };
 
   return (
@@ -115,14 +136,22 @@ const ProductCard = ({ product, className = '' }) => {
           )}
         </div>
 
-        {/* Add to Cart Button */}
-        <button
-          onClick={handleAddToCart}
-          className="w-full mt-4 bg-primary-600 hover:bg-primary-700 text-white py-2 px-4 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
-        >
-          <ShoppingCart className="w-4 h-4" />
-          <span>Add to Cart</span>
-        </button>
+        {/* Add to Cart + Buy Now Buttons */}
+        <div className="grid grid-cols-2 gap-2 mt-4">
+          <button
+            onClick={handleAddToCart}
+            className="bg-primary-600 hover:bg-primary-700 text-white py-2 px-4 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
+          >
+            <ShoppingCart className="w-4 h-4" />
+            <span>Add to Cart</span>
+          </button>
+          <button
+            onClick={handleBuyNow}
+            className="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg font-medium transition-colors flex items-center justify-center"
+          >
+            Buy Now
+          </button>
+        </div>
       </div>
     </Link>
   );

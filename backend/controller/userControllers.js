@@ -24,7 +24,7 @@ const userController = {
       res.status(200).json({
         message: "User created successfully",
         success: true,
-        user: savedUser,
+        data: savedUser,
       });
     } catch (err) {
       res.status(500).json({ message: err.message, success: false });
@@ -68,7 +68,8 @@ const userController = {
   async getUserDetails(req, res) {
     try {
       const user = await userModel.findById(req.userId);
-      res.json({ message: "User details", success: true, user });
+      if (!user) throw new Error("User not found");
+      res.json({ message: "User details", success: true, data: user });
     } catch (err) {
       res.status(400).json({ message: err.message, success: false });
     }
@@ -89,11 +90,49 @@ const userController = {
   async getAllUsers(req, res) {
     try {
       const users = await userModel.find();
-      res.json({ message: "All users", success: true, users });
+      res.json({ message: "All users", success: true, data: users });
     } catch (err) {
       res.status(400).json({ message: err.message, success: false });
     }
   },
+
+  // ✅ Activate user
+async activateUser (req, res) {
+  try {
+    const user = await userModel.findByIdAndUpdate(
+      req.params.id,
+      { isActive: true },
+      { new: true }
+    );
+    res.json({ message: "User activated", data: user });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to activate user" });
+  }
+},
+
+// ✅ Deactivate user
+async deactivateUser(req, res){
+  try {
+    const user = await userModel.findByIdAndUpdate(
+      req.params.id,
+      { isActive: false },
+      { new: true }
+    );
+    res.json({ message: "User deactivated", data: user });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to deactivate user" });
+  }
+},
+
+// ✅ Delete user
+async deleteUser(req, res){
+  try {
+    await userModel.findByIdAndDelete(req.params.id);
+    res.json({ message: "User deleted" });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to delete user" });
+  }
+},
 };
 
 module.exports = userController;

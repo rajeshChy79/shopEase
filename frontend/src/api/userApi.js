@@ -30,4 +30,18 @@ export const userApi = {
     const response = await API.post('/api/user/update', userData);
     return response.data;
   },
+  activateUser: async (userId) => {
+    const response = await API.patch(`/api/user/${userId}/activate`);
+    return response.data;
+  },
+
+  deactivateUser: async (userId) => {
+    const response = await API.patch(`/api/user/${userId}/deactivate`);
+    return response.data;
+  },
+
+  deleteUser: async (userId) => {
+    const response = await API.delete(`/api/user/${userId}`);
+    return response.data;
+  },
 };

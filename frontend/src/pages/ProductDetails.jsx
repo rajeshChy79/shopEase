@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
-  ShoppingCart, Heart, Star, Minus, Plus, 
+  ShoppingCart, Heart, Star, Minus, Plus, Trash,
   Truck, Shield, RefreshCw, ChevronLeft, Share2 
 } from 'lucide-react';
 import { productApi } from '../api/productApi';
@@ -22,7 +22,7 @@ const ProductDetails = () => {
   const [addingToCart, setAddingToCart] = useState(false);
   const [isWishlisted, setIsWishlisted] = useState(false);
 
-  const { addToCart } = useCart();
+  const { addToCart, removeFromCart } = useCart();
   const { isAuthenticated } = useAuth();
 
   useEffect(() => {
@@ -73,9 +73,26 @@ const ProductDetails = () => {
       quantity,
     });
     if (result.success) {
-      // show toast success if you want
+      // toast success if needed
     }
     setAddingToCart(false);
+  };
+
+  const handleBuyNow = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!isAuthenticated()) {
+      navigate('/login');
+      return;
+    }
+
+    await addToCart({
+      productId: product._id,
+      quantity: 1,
+    });
+
+    navigate('/checkout');
   };
 
   const handleQuantityChange = (change) => {
@@ -83,6 +100,15 @@ const ProductDetails = () => {
     if (newQuantity >= 1 && newQuantity <= 10) {
       setQuantity(newQuantity);
     }
+  };
+
+  const handleRemove = async () => {
+    if (!isAuthenticated()) {
+      navigate('/login');
+      return;
+    }
+    await removeFromCart(product._id);
+    setQuantity(1); // reset quantity
   };
 
   if (loading) {
@@ -218,16 +244,26 @@ const ProductDetails = () => {
               <h3 className="text-lg font-semibold text-gray-900 mb-3">Quantity</h3>
               <div className="flex items-center space-x-4">
                 <div className="flex items-center border border-gray-300 rounded-lg">
-                  <button
-                    onClick={() => handleQuantityChange(-1)}
-                    disabled={quantity <= 1}
-                    className="p-2 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    <Minus className="w-4 h-4" />
-                  </button>
+                  {quantity > 1 ? (
+                    <button
+                      onClick={() => handleQuantityChange(-1)}
+                      className="p-2 hover:bg-gray-100 transition-colors"
+                    >
+                      <Minus className="w-4 h-4" />
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleRemove}
+                      className="p-2 hover:bg-red-100 text-red-600 transition-colors"
+                    >
+                      <Trash className="w-4 h-4" />
+                    </button>
+                  )}
+
                   <span className="px-4 py-2 text-center min-w-[60px] font-medium">
                     {quantity}
                   </span>
+
                   <button
                     onClick={() => handleQuantityChange(1)}
                     disabled={quantity >= 10}
@@ -258,6 +294,14 @@ const ProductDetails = () => {
                     <span>Add to Cart</span>
                   </>
                 )}
+              </button>
+
+              {/* Buy Now Button */}
+              <button
+                onClick={handleBuyNow}
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 px-6 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
+              >
+                <span>Buy Now</span>
               </button>
 
               <button

@@ -2,7 +2,6 @@ import API from './axios';
 
 export const cartApi = {
   addToCart: async (productData) => {
-    console.log("productData", productData);
     const response = await API.post('/api/cart/add', productData);
     return response.data;
   },
@@ -14,6 +13,7 @@ export const cartApi = {
 
   viewCart: async () => {
     const response = await API.get('/api/cart/view');
+    console.log("viewCart response", response);
     return response.data;
   },
 

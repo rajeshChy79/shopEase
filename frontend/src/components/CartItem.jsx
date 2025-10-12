@@ -9,7 +9,6 @@ const CartItem = ({ item }) => {
 
   const handleQuantityChange = async (newQuantity) => {
     if (newQuantity < 1) return;
-    
     setIsUpdating(true);
     await updateCartItem(item.productId._id, newQuantity);
     setIsUpdating(false);
@@ -48,16 +47,29 @@ const CartItem = ({ item }) => {
       {/* Quantity Controls */}
       <div className="flex items-center space-x-3">
         <div className="flex items-center border border-gray-300 rounded-lg">
-          <button
-            onClick={() => handleQuantityChange(item.quantity - 1)}
-            disabled={isUpdating || item.quantity <= 1}
-            className="p-2 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            <Minus className="w-4 h-4" />
-          </button>
+          {item.quantity > 1 ? (
+            <button
+              onClick={() => handleQuantityChange(item.quantity - 1)}
+              disabled={isUpdating}
+              className="p-2 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <Minus className="w-4 h-4" />
+            </button>
+          ) : (
+            <button
+              onClick={handleRemove}
+              disabled={isUpdating}
+              className="p-2 hover:bg-gray-100 text-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              title="Remove from cart"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
+
           <span className="px-4 py-2 text-center min-w-[60px] font-medium">
             {item.quantity}
           </span>
+
           <button
             onClick={() => handleQuantityChange(item.quantity + 1)}
             disabled={isUpdating}

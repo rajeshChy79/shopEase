@@ -15,11 +15,14 @@ import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
 import Orders from './pages/Orders';
 import Profile from './pages/Profile';
+import SearchResults from './pages/SearchResults';
 
 // Admin Pages
 import Dashboard from './pages/Admin/Dashboard';
 import UploadProduct from './pages/Admin/UploadProduct';
 import ManageUsers from './pages/Admin/ManageUsers';
+import Categories from './pages/Categories';
+import Products from './pages/Products';
 
 // Protected Route wrapper
 const ProtectedRoute = ({ children }) => {
@@ -77,6 +80,14 @@ export const router = createBrowserRouter([
         element: <CategoryPage />,
       },
       {
+        path: "categories",       // all products
+        element: <Categories />,
+      },
+      {
+        path: "products",       // all products
+        element: <Products />,
+      },
+      {
         path: 'cart',
         element: (
           <ProtectedRoute>
@@ -131,6 +142,10 @@ export const router = createBrowserRouter([
             <ManageUsers />
           </AdminRoute>
         ),
+      },
+      {
+        path: 'search',
+        element: <SearchResults />,
       },
     ],
   },

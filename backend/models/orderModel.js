@@ -1,49 +1,34 @@
-const mongoose = require("mongoose");
+const mongoose=require("mongoose");
 
-const OrderSchema = new mongoose.Schema(
-  {
-    userId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
-    email: { type: String, required: true },
-    shippingAddress: {
-      fullName: { type: String, required: true },
-      address: { type: String, required: true },
-      city: { type: String, required: true },
-      state: { type: String, required: true },
-      postalCode: { type: String, required: true },
-      phoneNumber: { type: String, required: true },
-    },
-    products: [
-      {
-        name: { type: String, required: true },
-        image: { type: String, required: true },
-        seller: { type: String },
-        price: { type: Number, required: true },
-        quantity: { type: Number, required: true },
-      },
-    ],
-    totalAmount: { type: Number, required: true },
-    paymentId: { type: String }, //  Will be updated after payment success
-    orderStatus: {
-      orderConfirmed: { type: Date, default: Date.now },
-      delivered: { type: Date },
-      returnPolicyEnds: { type: Date },
-    },
-    paymentMethod: {
-      type: String,
-      enum: ["UPI", "Credit Card", "Debit Card", "Net Banking", "COD"],
-      required: true,
-    },
-    paymentStatus: {
-      type: String,
-      enum: ["Paid", "Pending", "Failed"], //  Fixed valid enum values
-      default: "Pending",
-    },
+const orderSchema = new mongoose.Schema({
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true
   },
-  { timestamps: true }
-);
+  items: [
+    {
+      productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product", required: true },
+      quantity: { type: Number, required: true },
+      price: { type: Number, required: true }
+    }
+  ],
+  shippingAddress: {
+    fullName: String,
+    email: String,
+    phone: String,
+    address: String,
+    city: String,
+    state: String,
+    pincode: String,
+    country: String
+  },
+  paymentMethod: { type: String, enum: ["cod", "card"], default: "cod" },
+  paymentStatus: { type: String, enum: ["pending", "paid"], default: "pending" },
+  totalAmount: { type: Number, required: true },
+  orderStatus: { type: String, enum: ["placed", "processing", "shipped", "delivered"], default: "placed" },
+  createdAt: { type: Date, default: Date.now }
+});
 
-module.exports = mongoose.model("Order", OrderSchema);
+const orderModel = mongoose.model('Order', orderSchema);
+module.exports = orderModel;

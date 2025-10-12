@@ -32,8 +32,8 @@ const cartController = {
   // Update cart quantity
   async updateCartProduct(req, res) {
     try {
-      const { _id, quantity } = req.body;
-      const updated = await cartModel.updateOne({ _id }, { quantity });
+      const { productId, quantity } = req.body;
+      const updated = await cartModel.updateOne({ productId }, { quantity });
       res.json({ message: "Cart updated", success: true, data: updated });
     } catch (err) {
       res.status(400).json({ message: err.message, success: false });
@@ -43,11 +43,13 @@ const cartController = {
   // Delete product from cart
   async deleteCartProduct(req, res) {
     try {
-      const { _id } = req.body;
-      const deleted = await cartModel.deleteOne({ userId: req.userId, _id });
+      const { productId } = req.body;
+      const deleted = await cartModel.deleteOne({ userId: req.userId, productId });
+      console.log(deleted);
       res.json({
         message: deleted.deletedCount ? "Product removed" : "Not found",
-        success: !!deleted.deletedCount,
+        data: !!deleted.deletedCount,
+        success: deleted.acknowledged,
       });
     } catch (err) {
       res.status(400).json({ message: err.message, success: false });
@@ -58,7 +60,7 @@ const cartController = {
   async countCartProducts(req, res) {
     try {
       const count = await cartModel.countDocuments({ userId: req.userId });
-      res.json({ message: "Cart count", success: true, count });
+      res.json({ message: "Cart count", success: true, data: count });
     } catch (err) {
       res.status(400).json({ message: err.message, success: false });
     }

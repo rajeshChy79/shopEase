@@ -180,8 +180,6 @@ const getCategoryWiseProducts = async (req, res) => {
       category: { $regex: category, $options: 'i' }
     });
 
-    console.log("Category-wise products:", products);
-
     res.status(200).json({
       data: products,
       success: true,

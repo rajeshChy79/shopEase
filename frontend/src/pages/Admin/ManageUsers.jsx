@@ -87,15 +87,27 @@ const ManageUsers = () => {
     return matchesSearch && matchesRole;
   });
 
-  const handleUserAction = async (userId, action) => {
-    try {
-      // Handle user actions like activate, deactivate, delete
-      console.log(`${action} user:`, userId);
-      // Implement actual API calls here
-    } catch (error) {
-      console.error(`Error ${action} user:`, error);
+
+const handleUserAction = async (userId, action) => {
+  try {
+    let response;
+
+    if (action === "activate") {
+      response = await userApi.activateUser(userId);
+    } else if (action === "deactivate") {
+      response = await userApi.deactivateUser(userId);
+    } else if (action === "delete") {
+      response = await userApi.deleteUser(userId);
     }
-  };
+
+    console.log(response.message);
+    // Refresh user list if needed
+  } catch (err) {
+    console.error(`Error performing ${action}`, err);
+  }
+};
+
+
 
   const getRoleColor = (role) => {
     switch (role) {
