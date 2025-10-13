@@ -29,8 +29,8 @@ const userSchema = new mongoose.Schema(
 
     role: {
       type: String,
-      enum: ['user', 'admin'], // only allow valid roles
-      default: 'user',
+      enum: ['GENERAL', 'admin'], // only allow valid roles
+      default: 'GENERAL',
     },
 
     isActive: {
