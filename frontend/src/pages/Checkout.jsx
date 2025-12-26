@@ -44,17 +44,17 @@ const Checkout = () => {
     },
   });
 
-  useEffect(() => {
-    if (!isAuthenticated()) {
-      navigate("/login");
-      return;
-    }
+useEffect(() => {
+  if (!isAuthenticated()) {
+    navigate("/login");
+    return;
+  }
 
-    if (cartItems.length === 0 && step !== 3) {
-      navigate("/cart");
-      return;
-    }
-  }, [isAuthenticated, cartItems, navigate]);
+  if (cartItems.length === 0 && step !== 3) {
+    navigate("/cart");
+  }
+}, [cartItems.length, step]);
+
 
   const handleInputChange = (section, field, value) => {
     setOrderData((prev) => ({
@@ -65,6 +65,75 @@ const Checkout = () => {
       },
     }));
   };
+
+  const handleRazorpayPayment = async () => {
+  try {
+    console.log("place order", placedOrder);
+
+
+    // 1️⃣ Create Razorpay order from backend
+    const res = await orderApi.createOrder({
+      items: placedOrder.items,
+      shippingAddress: placedOrder.shippingAddress,
+      paymentMethod: placedOrder.paymentMethod,
+      totalAmount: placedOrder.totalAmount,
+      orderId: placedOrder._id,
+    });
+
+    if (!window.Razorpay) {
+      alert("Razorpay SDK not loaded");
+      return;
+    }
+
+    const options = {
+      key: res.data.key,
+      amount: res.data.totalAmount,
+      currency: "INR",
+      name: "Your Store",
+      description: "Order Payment",
+      order_id: res.data.razorpayOrderId,
+
+      handler: async function (response) {
+        // 2️⃣ Verify payment
+        const verify = await orderApi.verifyPayment({
+          razorpay_order_id: response.razorpay_order_id,
+          razorpay_payment_id: response.razorpay_payment_id,
+          razorpay_signature: response.razorpay_signature,
+          orderId: placedOrder._id,
+        });
+
+        if (verify?.success) {
+          navigate("/payment-success");
+        } else {
+          navigate("/payment-failed");
+        }
+      },
+
+      prefill: {
+        name: placedOrder.shippingAddress.fullName,
+        email: placedOrder.shippingAddress.email,
+        contact: placedOrder.shippingAddress.phone,
+      },
+
+      theme: {
+        color: "#071952",
+      },
+
+      modal: {
+        ondismiss: () => {
+          navigate("/payment-failed");
+        },
+      },
+    };
+
+    const razorpay = new window.Razorpay(options);
+    razorpay.open();
+  } catch (error) {
+    console.error("Razorpay Error:", error);
+    navigate("/payment-failed");
+  }
+};
+
 
   const validateStep1 = () => {
     const { shippingAddress } = orderData;
@@ -109,14 +178,9 @@ const Checkout = () => {
       const response = await orderApi.createOrder(orderPayload);
 
       if (response?.success) {
-        // ✅ Store placed order
         setPlacedOrder(response.data);
-
-        // ✅ Clear cart after successful order
-        clearCart();
-
-        // ✅ Go to confirmation step
-        setStep(3);
+        setStep(3);     // 👈 first
+        clearCart();    // 👈 after
       } else {
         console.error(
           "Order creation failed:",
@@ -136,38 +200,6 @@ const Checkout = () => {
 
   if (loading) {
     return <LoadingSpinner text="Processing your order..." />;
-  }
-
-  // Order Confirmation Step
-  if (step === 3) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="max-w-md mx-auto bg-white rounded-lg shadow-lg p-8 text-center">
-          <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-6" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
-            Order Placed Successfully!
-          </h2>
-          <p className="text-gray-600 mb-6">
-            Thank you for your order. You will receive a confirmation email
-            shortly.
-          </p>
-          <div className="space-y-3">
-            <button
-              onClick={() => navigate("/orders")}
-              className="w-full bg-primary-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-primary-700 transition-colors"
-            >
-              View Orders
-            </button>
-            <button
-              onClick={() => navigate("/")}
-              className="w-full border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-50 transition-colors"
-            >
-              Continue Shopping
-            </button>
-          </div>
-        </div>
-      </div>
-    );
   }
 
   return (
@@ -410,223 +442,162 @@ const Checkout = () => {
               </div>
             )}
 
-            {step === 2 && (
-              <div className="bg-white rounded-lg shadow-sm p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-6">
-                  Payment Method
-                </h2>
+{step === 2 && (
+  <div className="bg-white rounded-lg shadow-sm p-6">
+    <h2 className="text-xl font-semibold text-gray-900 mb-6">
+      Choose Payment Method
+    </h2>
 
-                {/* Payment Method Selection */}
-                <div className="space-y-4 mb-6">
-                  <div className="flex items-center space-x-3">
-                    <input
-                      type="radio"
-                      id="card"
-                      name="paymentMethod"
-                      value="card"
-                      checked={orderData.paymentMethod === "card"}
-                      onChange={(e) =>
-                        setOrderData((prev) => ({
-                          ...prev,
-                          paymentMethod: e.target.value,
-                        }))
-                      }
-                      className="w-4 h-4 text-primary-600 focus:ring-primary-500"
-                    />
-                    <label
-                      htmlFor="card"
-                      className="flex items-center space-x-2 cursor-pointer"
-                    >
-                      <CreditCard className="w-5 h-5 text-gray-600" />
-                      <span>Credit/Debit Card</span>
-                    </label>
-                  </div>
+    {/* Payment Method Selection */}
+    <div className="space-y-4 mb-6">
+      <div className="flex items-center space-x-3">
+        <input
+          type="radio"
+          id="online"
+          name="paymentMethod"
+          value="card"
+          checked={orderData.paymentMethod === "card"}
+          onChange={(e) =>
+            setOrderData((prev) => ({
+              ...prev,
+              paymentMethod: e.target.value,
+            }))
+          }
+        />
+        <label htmlFor="online" className="cursor-pointer">
+          Online Payment (UPI / Card / NetBanking)
+        </label>
+      </div>
 
-                  <div className="flex items-center space-x-3">
-                    <input
-                      type="radio"
-                      id="cod"
-                      name="paymentMethod"
-                      value="cod"
-                      checked={orderData.paymentMethod === "cod"}
-                      onChange={(e) =>
-                        setOrderData((prev) => ({
-                          ...prev,
-                          paymentMethod: e.target.value,
-                        }))
-                      }
-                      className="w-4 h-4 text-primary-600 focus:ring-primary-500"
-                    />
-                    <label htmlFor="cod" className="cursor-pointer">
-                      Cash on Delivery
-                    </label>
-                  </div>
-                </div>
+      <div className="flex items-center space-x-3">
+        <input
+          type="radio"
+          id="cod"
+          name="paymentMethod"
+          value="cod"
+          checked={orderData.paymentMethod === "cod"}
+          onChange={(e) =>
+            setOrderData((prev) => ({
+              ...prev,
+              paymentMethod: e.target.value,
+            }))
+          }
+        />
+        <label htmlFor="cod" className="cursor-pointer">
+          Cash on Delivery
+        </label>
+      </div>
+    </div>
 
-                {/* Card Details */}
-                {orderData.paymentMethod === "card" && (
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Cardholder Name
-                      </label>
-                      <input
-                        type="text"
-                        value={orderData.cardDetails.cardholderName}
-                        onChange={(e) =>
-                          handleInputChange(
-                            "cardDetails",
-                            "cardholderName",
-                            e.target.value
-                          )
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                        placeholder="Name on card"
-                      />
-                    </div>
+    <div className="flex justify-between mt-6">
+      <button
+        onClick={() => setStep(1)}
+        className="px-6 py-3 border border-gray-300 rounded-lg"
+      >
+        Back
+      </button>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Card Number
-                      </label>
-                      <div className="relative">
-                        <CreditCard className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                        <input
-                          type="text"
-                          value={orderData.cardDetails.cardNumber}
-                          onChange={(e) =>
-                            handleInputChange(
-                              "cardDetails",
-                              "cardNumber",
-                              e.target.value
-                            )
-                          }
-                          className="pl-10 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                          placeholder="1234 5678 9012 3456"
-                        />
-                      </div>
-                    </div>
+      <button
+        onClick={() => handlePlaceOrder()}
+        className="px-6 py-3 bg-primary-600 text-white rounded-lg"
+      >
+        Continue
+      </button>
+    </div>
+  </div>
+)}
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Expiry Date
-                        </label>
-                        <input
-                          type="text"
-                          value={orderData.cardDetails.expiryDate}
-                          onChange={(e) =>
-                            handleInputChange(
-                              "cardDetails",
-                              "expiryDate",
-                              e.target.value
-                            )
-                          }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                          placeholder="MM/YY"
-                        />
-                      </div>
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          CVV
-                        </label>
-                        <div className="relative">
-                          <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                          <input
-                            type="text"
-                            value={orderData.cardDetails.cvv}
-                            onChange={(e) =>
-                              handleInputChange(
-                                "cardDetails",
-                                "cvv",
-                                e.target.value
-                              )
-                            }
-                            className="pl-10 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                            placeholder="123"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
+{step === 3 && placedOrder && (
+  <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+    <div className="max-w-lg w-full bg-white rounded-lg shadow-lg p-8">
+      
+      {/* SUCCESS ICON */}
+      <div className="text-center mb-6">
+        <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+        <h2 className="text-2xl font-bold text-gray-900">
+          Order Created Successfully!
+        </h2>
+        <p className="text-gray-600 mt-2">
+          Please review your order and confirm payment.
+        </p>
+      </div>
 
-                <div className="flex justify-between mt-6">
-                  <button
-                    onClick={() => setStep(1)}
-                    className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
-                  >
-                    Back to Shipping
-                  </button>
+      {/* ORDER ITEMS */}
+      <div className="mb-6">
+        <h3 className="font-semibold mb-2">Order Items</h3>
+        <table className="w-full border text-sm">
+          <thead className="bg-gray-100">
+            <tr>
+              <th className="p-2 text-left">Product</th>
+              <th className="p-2 text-center">Qty</th>
+              <th className="p-2 text-right">Price</th>
+            </tr>
+          </thead>
+          <tbody>
+            {placedOrder.items.map((item) => (
+              <tr key={item.productId._id} className="border-t">
+                <td className="p-2">
+                  {item.productId.productName}
+                </td>
+                <td className="p-2 text-center">{item.quantity}</td>
+                <td className="p-2 text-right">
+                  {formatPrice(item.price * item.quantity)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
-                  <button
-                    onClick={handlePlaceOrder}
-                    disabled={!validateStep2()}
-                    className="px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    Place Order
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+      {/* SHIPPING ADDRESS */}
+      <div className="mb-6 border p-4 rounded">
+        <h3 className="font-semibold mb-2">Shipping Address</h3>
+        <p>{placedOrder.shippingAddress.fullName}</p>
+        <p>{placedOrder.shippingAddress.address}</p>
+        <p>
+          {placedOrder.shippingAddress.city},{" "}
+          {placedOrder.shippingAddress.state} –{" "}
+          {placedOrder.shippingAddress.pincode}
+        </p>
+        <p>{placedOrder.shippingAddress.phone}</p>
+      </div>
 
-          {/* Order Summary */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-sm p-6 sticky top-8">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                Order Summary
-              </h3>
+      {/* TOTAL */}
+      <div className="flex justify-between font-bold text-lg mb-6 border-t pt-4">
+        <span>Total</span>
+        <span>{formatPrice(placedOrder.totalAmount)}</span>
+      </div>
 
-              <div className="space-y-3 mb-4">
-                {cartItems.map((item) => (
-                  <div
-                    key={item.productId._id}
-                    className="flex items-center space-x-3"
-                  >
-                    <img
-                      src={
-                        item.productId.productImage?.[0] ||
-                        "/api/placeholder/60/60"
-                      }
-                      alt={item.productId.productName}
-                      className="w-12 h-12 rounded-lg object-cover"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        {item.productId.productName}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        Qty: {item.quantity}
-                      </p>
-                    </div>
-                    <p className="text-sm font-medium text-gray-900">
-                      {formatPrice(item.productId.sellingPrice * item.quantity)}
-                    </p>
-                  </div>
-                ))}
-              </div>
+      {/* ACTION BUTTONS */}
+      <div className="space-y-3">
+        {placedOrder.paymentMethod === "card" ? (
+          <button
+            onClick={handleRazorpayPayment}
+            className="w-full bg-primary-600 text-white py-3 rounded-lg font-medium hover:bg-primary-700"
+          >
+            Confirm & Pay
+          </button>
+        ) : (
+          <button
+            onClick={() => navigate("/orders")}
+            className="w-full bg-primary-600 text-white py-3 rounded-lg font-medium hover:bg-primary-700"
+          >
+            View Orders
+          </button>
+        )}
 
-              <div className="border-t pt-4 space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Subtotal</span>
-                  <span className="font-medium">{formatPrice(subtotal)}</span>
-                </div>
+        <button
+          onClick={() => navigate("/")}
+          className="w-full border border-gray-300 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-50"
+        >
+          Continue Shopping
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Shipping</span>
-                  <span className="font-medium">
-                    {shipping === 0 ? "Free" : formatPrice(shipping)}
-                  </span>
-                </div>
-
-                <div className="flex justify-between text-lg font-semibold pt-2 border-t">
-                  <span>Total</span>
-                  <span>{formatPrice(total)}</span>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>

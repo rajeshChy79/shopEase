@@ -47,7 +47,7 @@ const userController = {
         { expiresIn: "8h" }
       );
 
-      res.cookie("token", token, { httpOnly: true, secure: true });
+      res.cookie("token", token, { httpOnly: true, secure: true, sameSite: "none" });
       res.json({ data: user, message: "Login successful", success: true, token });
     } catch (err) {
       res.status(500).json({ message: err.message, success: false });

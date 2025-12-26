@@ -48,64 +48,100 @@ const Products = () => {
     }
   };
 
-  const fetchProducts = async () => {
-    try {
-      setLoading(true);
-      let response;
+const fetchProducts = async () => {
+  try {
+    setLoading(true);
 
-      if (filters.search) {
-        response = await productApi.searchProducts(filters.search);
+    console.log('Current Filters:', filters);
 
-      } else if (
-        filters.category ||
-        filters.minPrice ||
-        filters.maxPrice ||
-        filters.rating
-      ) {
-        response = await productApi.filterProducts({
-          category: filters.category,
-          minPrice: filters.minPrice ? parseInt(filters.minPrice) : undefined,
-          maxPrice: filters.maxPrice ? parseInt(filters.maxPrice) : undefined,
-          rating: filters.rating ? parseInt(filters.rating) : undefined
-        });
-      } else {
-        response = await productApi.getAllProducts();
-      }
+    // Normalize filters
+    const minP = filters.minPrice !== "" ? Number(filters.minPrice) : undefined;
+    const maxP = filters.maxPrice !== "" ? Number(filters.maxPrice) : undefined;
+    const rating = filters.rating !== "" ? Number(filters.rating) : undefined;
+    const category = filters.category || undefined;
+    const search = filters.search || undefined;
 
-      if (response.success) {
-        let filteredProducts = response.data || [];
+    // Debug log — inspect this in console and the Network tab payload
+    console.log('fetchProducts() called with', { category, minP, maxP, rating, search, sortBy, currentPage });
 
-        // Sorting
-        switch (sortBy) {
-          case 'price-low':
-            filteredProducts.sort((a, b) => a.sellingPrice - b.sellingPrice);
-            break;
-          case 'price-high':
-            filteredProducts.sort((a, b) => b.sellingPrice - a.sellingPrice);
-            break;
-          case 'name':
-            filteredProducts.sort((a, b) =>
-              a.productName.localeCompare(b.productName)
-            );
-            break;
-          default:
-            break; // 'popular' keeps API order
-        }
+    let response;
 
-        // Pagination
-        const startIndex = (currentPage - 1) * productsPerPage;
-        const endIndex = startIndex + productsPerPage;
-        const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
+    if (search) {
+      response = await productApi.searchProducts(search);
+    } else if (category || minP !== undefined || maxP !== undefined || rating !== undefined) {
+      // Build payload only with defined values
+      const payload = {};
+      if (category) payload.category = category;
+      if (minP !== undefined) payload.minPrice = minP;
+      if (maxP !== undefined) payload.maxPrice = maxP;
+      if (rating !== undefined) payload.rating = rating;
+      payload.search = search;
 
-        setProducts(paginatedProducts);
-        setTotalPages(Math.ceil(filteredProducts.length / productsPerPage));
-      }
-    } catch (error) {
-      console.error('Error fetching products:', error);
-    } finally {
-      setLoading(false);
+      console.log('Calling filterProducts with:', payload);
+      response = await productApi.filterProducts(payload);
+    } else {
+      response = await productApi.getAllProducts();
     }
-  };
+
+    if (!response || !response.success) {
+      console.warn('No response or success=false from API', response);
+      setProducts([]);
+      setTotalPages(0);
+      return;
+    }
+
+
+    // Received list (server-side filtered or all products)
+    let serverProducts = response.data || [];
+
+    // --- Client-side fallback filtering (ensures min/max work even if backend ignored them) ---
+    if (minP !== undefined || maxP !== undefined) {
+      serverProducts = serverProducts.filter(p => {
+        const price = Number(p.sellingPrice ?? p.price ?? 0); // guard for different field names
+        if (minP !== undefined && price < minP) return false;
+        if (maxP !== undefined && price > maxP) return false;
+        return true;
+      });
+    }
+
+    if (rating !== undefined) {
+      serverProducts = serverProducts.filter(p => {
+        // assumes rating field exists; adjust if your product has rating.score or similar
+        const prodRating = Number(p.rating ?? p.avgRating ?? 0);
+        return prodRating >= rating;
+      });
+    }
+
+    // Sorting (same as before)
+    switch (sortBy) {
+      case 'price-low':
+        serverProducts.sort((a, b) => (a.sellingPrice ?? a.price) - (b.sellingPrice ?? b.price));
+        break;
+      case 'price-high':
+        serverProducts.sort((a, b) => (b.sellingPrice ?? b.price) - (a.sellingPrice ?? a.price));
+        break;
+      case 'name':
+        serverProducts.sort((a, b) => (a.productName ?? '').localeCompare(b.productName ?? ''));
+        break;
+      default:
+        break;
+    }
+
+    // Pagination (client-side)
+    const startIndex = (currentPage - 1) * productsPerPage;
+    const paginated = serverProducts.slice(startIndex, startIndex + productsPerPage);
+
+    setProducts(paginated);
+    setTotalPages(Math.ceil(serverProducts.length / productsPerPage));
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    setProducts([]);
+    setTotalPages(0);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleFilterChange = (key, value) => {
     const newFilters = { ...filters, [key]: value };
@@ -149,6 +185,8 @@ const Products = () => {
   const hasActiveFilters =
     Object.values(filters).some((value) => value !== '') ||
     sortBy !== 'popular';
+
+
 
   return (
     <div className="min-h-screen bg-[#EBF4F6]">
@@ -262,8 +300,8 @@ const Products = () => {
                 >
                   <option value="">All Categories</option>
                   {categories.map((category) => (
-                    <option key={category._id} value={category.name} className="capitalize">
-                      {category.name}
+                    <option key={category._id} value={category.category} className="capitalize">
+                      {category.category}
                     </option>
                   ))}
                 </select>

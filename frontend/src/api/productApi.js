@@ -33,6 +33,7 @@ export const productApi = {
 
   searchProducts: async (query) => {
     const response = await API.get(`/api/product/search?q=${query}`);
+    console.log("searchProducts response", response);
     return response.data;
   },
 

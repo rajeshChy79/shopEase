@@ -23,6 +23,7 @@ const cartController = {
   async viewCartProducts(req, res) {
     try {
       const products = await cartModel.find({ userId: req.userId }).populate("productId");
+      console.log(products);
       res.json({ message: "Cart products", success: true, data: products });
     } catch (err) {
       res.status(400).json({ message: err.message, success: false });
@@ -60,6 +61,7 @@ const cartController = {
   async countCartProducts(req, res) {
     try {
       const count = await cartModel.countDocuments({ userId: req.userId });
+      console.log("cart count:", count);
       res.json({ message: "Cart count", success: true, data: count });
     } catch (err) {
       res.status(400).json({ message: err.message, success: false });

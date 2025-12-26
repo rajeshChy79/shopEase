@@ -8,6 +8,7 @@ export const userApi = {
 
   signin: async (credentials) => {
     const response = await API.post('/api/user/signin', credentials);
+    console.log("signin response", response.data);
     return response.data;
   },
 

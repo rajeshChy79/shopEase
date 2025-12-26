@@ -3,8 +3,9 @@ const orderModel = require("../models/orderModel");
 // POST /api/order/create
 exports.createOrder = async (req, res) => {
   try {
-    const { items, shippingAddress, paymentMethod, totalAmount } = req.body;
+    const { items, shippingAddress, paymentMethod, totalAmount, order_id} = req.body;
     console.log(req.userId);
+    console.log("Creating order with data:", { items, shippingAddress, paymentMethod, totalAmount });
 
     if (!items || items.length === 0) {
       return res.status(400).json({ success: false, message: "No items in order" });
@@ -17,8 +18,11 @@ exports.createOrder = async (req, res) => {
       paymentMethod,
       totalAmount,
       orderStatus: paymentMethod === "cod" ? "placed" : "processing",
-      paymentStatus: "pending"
+      paymentStatus: "pending",
+      key: process.env.RAZORPAY_KEY_ID ,// 🔹 For Razorpay integration
+      razorpayOrderId: order_id
     });
+    console.log(order);
 
     await order.save();
 

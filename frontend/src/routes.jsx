@@ -16,6 +16,8 @@ import Checkout from './pages/Checkout';
 import Orders from './pages/Orders';
 import Profile from './pages/Profile';
 import SearchResults from './pages/SearchResults';
+import PaymentSuccess from './pages/PaymentSuccess';
+import PaymentFailed from './pages/PaymentFailed';
 
 // Admin Pages
 import Dashboard from './pages/Admin/Dashboard';
@@ -100,6 +102,22 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <Checkout />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'payment-success',
+        element: (
+          <ProtectedRoute>
+            <PaymentSuccess />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'payment-failed',
+        element: (
+          <ProtectedRoute>
+            <PaymentFailed />
           </ProtectedRoute>
         ),
       },

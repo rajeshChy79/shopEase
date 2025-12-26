@@ -89,41 +89,77 @@ const getProductDetails = async (req, res) => {
 
 // 📌 Search Product (by name or category)
 const searchProducts = async (req, res) => {
+  console.log("req comes")
   try {
-    const query = req.query.q || "";
-    const regex = new RegExp(query, "i");
-    const product = await productModel.find({
-      $or: [{ productName: regex }, { category: regex }],
-    });
+    const { category, minPrice, maxPrice, rating } = req.query;
+    console.log(category);
+    console.log(minPrice);
+    console.log(maxPrice);
+    console.log(rating);
+    const filter = {};
 
-    res.json({
-      data: product,
-      success: true,
-      error: false,
-    });
+    if (category) filter.category = category;
+    if (minPrice !== undefined) filter.sellingPrice = { $gte: Number(minPrice) };
+    if (maxPrice !== undefined) {
+      filter.sellingPrice = {
+        ...(filter.sellingPrice || {}),
+        $lte: Number(maxPrice)
+      };
+    }
+
+    if (rating !== undefined) filter.rating = { $gte: Number(rating) };
+
+    const products = await productModel.find(filter);
+
+    res.json({ success: true, data: products, error: false });
   } catch (err) {
-    res.json({
-      message: err.message || err,
-      success: false,
-      error: true,
-    });
+    res.json({ success: false, error: true, message: err.message });
   }
 };
 
-// 📌 Filter Products by Category List
+
 const filterProducts = async (req, res) => {
   try {
-    const categoryList = req.body.category || [];
-    const products = await productModel.find({
-      category: { $in: categoryList },
-    });
+    let { category, minPrice, maxPrice, rating, search } = req.body;
+
+    const filter = {};
+
+    // ⭐ Search filter (product name OR category)
+    if (search && search.trim() !== "") {
+      const regex = new RegExp(search, "i");
+      filter.$or = [
+        { productName: regex },
+        { category: regex }
+      ];
+    }
+
+    // ⭐ Category filter
+    if (category && category !== "") {
+      filter.category = category;
+    }
+
+    // ⭐ Price filter
+    if (minPrice !== undefined || maxPrice !== undefined) {
+      filter.sellingPrice = {};
+      if (minPrice !== undefined) filter.sellingPrice.$gte = Number(minPrice);
+      if (maxPrice !== undefined) filter.sellingPrice.$lte = Number(maxPrice);
+    }
+
+    // ⭐ Rating filter
+    if (rating !== undefined && rating !== "") {
+      filter.rating = { $gte: Number(rating) };
+    }
+
+    console.log("APPLYING FILTER:", filter);
+
+    const products = await productModel.find(filter);
 
     res.json({
-      data: products,
       success: true,
       error: false,
-      message: "Filtered products",
+      data: products,
     });
+
   } catch (err) {
     res.json({
       message: err.message || err,
@@ -132,6 +168,7 @@ const filterProducts = async (req, res) => {
     });
   }
 };
+
 
 // 📌 Get One Product per Category
 const getCategoryProducts = async (req, res) => {

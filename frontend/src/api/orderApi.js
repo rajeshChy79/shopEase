@@ -3,6 +3,7 @@ import API from './axios';
 export const orderApi = {
   createOrder: async (orderData) => {
     const response = await API.post('/api/order/create', orderData);
+    console.log(response.data);
     return response.data;
   },
 

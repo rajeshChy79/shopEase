@@ -26,9 +26,13 @@ const Navbar = () => {
     await logout();
     navigate('/');
     setIsUserMenuOpen(false);
+    setIsMobileMenuOpen(false);
   };
 
   const isActivePage = (path) => location.pathname === path;
+
+  // Normalize isAdmin to a boolean
+  const admin = typeof isAdmin === 'function' ? isAdmin() : isAdmin;
 
   return (
     <nav className="bg-white shadow-lg sticky top-0 z-40">
@@ -53,7 +57,11 @@ const Navbar = () => {
             {/* Cart */}
             <Link
               to="/cart"
-              className="relative flex items-center space-x-1 text-secondary-700 hover:text-primary-600 transition-colors"
+              className={`relative flex items-center space-x-1 transition-colors ${
+                isActivePage('/cart') 
+                  ? 'text-primary-600 font-semibold'
+                  : 'text-secondary-700 hover:text-primary-600'
+              }`}
             >
               <ShoppingCart className="w-6 h-6" />
               {cartCount > 0 && (
@@ -92,10 +100,14 @@ const Navbar = () => {
                       <Package className="w-4 h-4" />
                       <span>Orders</span>
                     </Link>
-                    {isAdmin() && (
+                    {admin && (
                       <Link
                         to="/admin"
-                        className="flex items-center space-x-2 px-4 py-2 text-secondary-700 hover:bg-primary-50 transition-colors"
+                        className={`flex items-center space-x-2 px-4 py-2 transition-colors ${
+                          isActivePage('/admin')
+                            ? 'bg-primary-50 text-primary-700 font-medium'
+                            : 'text-secondary-700 hover:bg-primary-50'
+                        }`}
                         onClick={() => setIsUserMenuOpen(false)}
                       >
                         <Settings className="w-4 h-4" />
@@ -156,7 +168,11 @@ const Navbar = () => {
           <div className="px-4 py-2 space-y-2">
             <Link
               to="/cart"
-              className="flex items-center space-x-3 px-3 py-2 rounded-lg text-secondary-700 hover:bg-primary-50 transition-colors"
+              className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
+                isActivePage('/cart')
+                  ? 'bg-primary-50 text-primary-700 font-medium'
+                  : 'text-secondary-700 hover:bg-primary-50'
+              }`}
               onClick={() => setIsMobileMenuOpen(false)}
             >
               <ShoppingCart className="w-5 h-5" />
@@ -186,10 +202,14 @@ const Navbar = () => {
                   <Package className="w-5 h-5" />
                   <span>Orders</span>
                 </Link>
-                {isAdmin() && (
+                {admin && (
                   <Link
                     to="/admin"
-                    className="flex items-center space-x-3 px-3 py-2 rounded-lg text-secondary-700 hover:bg-primary-50 transition-colors"
+                    className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
+                      isActivePage('/admin')
+                        ? 'bg-primary-50 text-primary-700 font-medium'
+                        : 'text-secondary-700 hover:bg-primary-50'
+                    }`}
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     <Settings className="w-5 h-5" />
@@ -197,10 +217,7 @@ const Navbar = () => {
                   </Link>
                 )}
                 <button
-                  onClick={() => {
-                    handleLogout();
-                    setIsMobileMenuOpen(false);
-                  }}
+                  onClick={handleLogout}
                   className="flex items-center space-x-3 px-3 py-2 rounded-lg text-red-600 hover:bg-red-50 transition-colors w-full text-left"
                 >
                   <LogOut className="w-5 h-5" />
