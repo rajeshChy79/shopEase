@@ -30,6 +30,7 @@ async function authToken(req, res, next) {
       }
 
       req.userId = decoded._id; // attach userId to request
+      console.log("Authenticated user ID:", req.userId);
       next();
     });
   } catch (err) {

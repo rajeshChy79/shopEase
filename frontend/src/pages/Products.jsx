@@ -37,6 +37,7 @@ const Products = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters, sortBy, currentPage]);
 
+
   const fetchCategories = async () => {
     try {
       const response = await productApi.getCategories();

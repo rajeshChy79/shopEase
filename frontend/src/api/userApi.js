@@ -45,4 +45,12 @@ export const userApi = {
     const response = await API.delete(`/api/user/${userId}`);
     return response.data;
   },
+  wishlistToggle: async (productId) => {
+    const response = await API.post(`api/user/wishlist/toggle`, {productId});
+    return response.data;
+  },
+  wishlistGet: async () => {
+    const response = await API.get(`api/user/wishlist`);
+    return response.data;
+  },
 };

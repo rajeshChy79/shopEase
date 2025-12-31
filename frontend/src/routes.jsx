@@ -25,6 +25,10 @@ import UploadProduct from './pages/Admin/UploadProduct';
 import ManageUsers from './pages/Admin/ManageUsers';
 import Categories from './pages/Categories';
 import Products from './pages/Products';
+import ViewOrders from './pages/Admin/ViewOrders';
+import Analytics from './pages/Admin/Analytics';
+import AdminDashboard from './pages/Admin/AdminDashboard';
+import AdminProducts from './pages/Admin/AdminProducts';
 
 // Protected Route wrapper
 const ProtectedRoute = ({ children }) => {
@@ -141,7 +145,7 @@ export const router = createBrowserRouter([
         path: 'admin',
         element: (
           <AdminRoute>
-            <Dashboard />
+            <AdminDashboard />
           </AdminRoute>
         ),
       },
@@ -158,6 +162,30 @@ export const router = createBrowserRouter([
         element: (
           <AdminRoute>
             <ManageUsers />
+          </AdminRoute>
+        ),
+      },
+      {
+        path: 'admin/orders',
+        element: (
+          <AdminRoute>
+            <ViewOrders />
+          </AdminRoute>
+        ),
+      },
+      {
+        path: 'admin/analytics',
+        element: (
+          <AdminRoute>
+            <Analytics />
+          </AdminRoute>
+        ),
+      },
+      {
+        path: 'admin/products',
+        element: (
+          <AdminRoute>
+            <AdminProducts />
           </AdminRoute>
         ),
       },

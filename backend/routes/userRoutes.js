@@ -12,6 +12,9 @@ router.get("/logout", userController.logout);
 router.get("/all", authToken, userController.getAllUsers);
 router.post("/update", authToken, userController.updateUser);
 
+router.post("/wishlist/toggle", authToken, userController.toggleWishlist);
+router.get("/wishlist", authToken, userController.getWishlist);
+
 // New
 router.patch("/:id/activate", userController.activateUser);
 router.patch("/:id/deactivate", userController.deactivateUser);

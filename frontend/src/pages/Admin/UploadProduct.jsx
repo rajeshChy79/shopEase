@@ -35,6 +35,7 @@ const UploadProduct = () => {
       const response = await productApi.getCategories();
       if (response.success) {
         setCategories(response.data);
+        console.log("Fetched categories:", response.data);
       }
     } catch (error) {
       console.error('Error fetching categories:', error);
@@ -59,17 +60,10 @@ const UploadProduct = () => {
 
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
-    
-    files.forEach(file => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setFormData(prev => ({
-          ...prev,
-          productImage: [...prev.productImage, event.target.result]
-        }));
-      };
-      reader.readAsDataURL(file);
-    });
+    setFormData(prev => ({
+      ...prev,
+      productImage: [...prev.productImage, ...files]
+    }));
   };
 
   const removeImage = (index) => {
@@ -116,18 +110,22 @@ const UploadProduct = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
     if (!validateForm()) {
       return;
     }
-    
     setLoading(true);
-    
     try {
-      const response = await productApi.uploadProduct(formData);
-      
+      const data = new FormData();
+      data.append('productName', formData.productName);
+      data.append('brandName', formData.brandName);
+      data.append('category', formData.category);
+      data.append('description', formData.description);
+      data.append('price', formData.price);
+      data.append('sellingPrice', formData.sellingPrice);
+      formData.productImage.forEach(file => data.append('productImage', file));
+      const response = await productApi.uploadProduct(data);
       if (response.success) {
-        navigate('/admin/dashboard');
+        navigate('/admin');
       } else {
         setErrors({ submit: response.message || 'Failed to upload product' });
       }
@@ -144,7 +142,7 @@ const UploadProduct = () => {
         {/* Header */}
         <div className="flex items-center mb-8">
           <button
-            onClick={() => navigate('/admin/dashboard')}
+            onClick={() => navigate('/admin')}
             className="flex items-center space-x-2 text-gray-600 hover:text-primary-600 transition-colors mr-4"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -221,8 +219,8 @@ const UploadProduct = () => {
                 >
                   <option value="">Select a category</option>
                   {categories.map((category) => (
-                    <option key={category} value={category}>
-                      {category}
+                    <option key={category._id} value={category.category}>
+                      {category.category}
                     </option>
                   ))}
                 </select>
@@ -330,10 +328,10 @@ const UploadProduct = () => {
               {/* Image Preview */}
               {formData.productImage.length > 0 && (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {formData.productImage.map((image, index) => (
+                  {formData.productImage.map((file, index) => (
                     <div key={index} className="relative group">
                       <img
-                        src={image}
+                        src={URL.createObjectURL(file)}
                         alt={`Product ${index + 1}`}
                         className="w-full h-32 object-cover rounded-lg border border-gray-200"
                       />

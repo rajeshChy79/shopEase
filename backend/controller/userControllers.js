@@ -133,6 +133,66 @@ async deleteUser(req, res){
     res.status(500).json({ error: "Failed to delete user" });
   }
 },
+
+// ✅ Add / Remove Wishlist (Toggle)
+async toggleWishlist(req, res) {
+  try {
+    const userId = req.userId;
+    const { productId } = req.body;
+
+    const user = await userModel.findById(userId); // ❌ no populate
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const alreadyWishlisted = user.wishlist.some(
+      (id) => id.toString() === productId
+    );
+
+    if (alreadyWishlisted) {
+      // ❌ remove
+      user.wishlist.pull(productId);
+    } else {
+      // ❤️ add (safe)
+      user.wishlist.addToSet(productId); // ✅ prevents duplicates
+    }
+
+    await user.save();
+    console.log("Wishlist updated:", user.wishlist);
+
+    res.json({
+      success: true,
+      wishlisted: !alreadyWishlisted,
+      wishlist: user.wishlist,
+    });
+  } catch (err) {
+    console.error("Wishlist error:", err);
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+},
+async getWishlist (req, res){
+  try {
+    const user = await userModel.findById(req.userId).populate(
+      "wishlist",
+      "productName productImage sellingPrice category"
+    );
+
+    res.json({
+      success: true,
+      data: user.wishlist,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+}
+
 };
 
 module.exports = userController;

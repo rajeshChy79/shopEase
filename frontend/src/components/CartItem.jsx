@@ -9,15 +9,11 @@ const CartItem = ({ item }) => {
 
   const handleQuantityChange = async (newQuantity) => {
     if (newQuantity < 1) return;
-    setIsUpdating(true);
     await updateCartItem(item.productId._id, newQuantity);
-    setIsUpdating(false);
   };
 
   const handleRemove = async () => {
-    setIsUpdating(true);
     await removeFromCart(item.productId._id);
-    setIsUpdating(false);
   };
 
   return (
@@ -50,7 +46,6 @@ const CartItem = ({ item }) => {
           {item.quantity > 1 ? (
             <button
               onClick={() => handleQuantityChange(item.quantity - 1)}
-              disabled={isUpdating}
               className="p-2 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <Minus className="w-4 h-4" />
@@ -58,7 +53,6 @@ const CartItem = ({ item }) => {
           ) : (
             <button
               onClick={handleRemove}
-              disabled={isUpdating}
               className="p-2 hover:bg-gray-100 text-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               title="Remove from cart"
             >
@@ -72,7 +66,6 @@ const CartItem = ({ item }) => {
 
           <button
             onClick={() => handleQuantityChange(item.quantity + 1)}
-            disabled={isUpdating}
             className="p-2 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <Plus className="w-4 h-4" />
@@ -100,7 +93,6 @@ const CartItem = ({ item }) => {
         </button>
         <button
           onClick={handleRemove}
-          disabled={isUpdating}
           className="p-2 text-gray-400 hover:text-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           title="Remove from cart"
         >

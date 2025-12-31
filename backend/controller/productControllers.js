@@ -7,8 +7,18 @@ const uploadProduct = async (req, res) => {
     if (!(await uploadProductPermission(req.userId))) {
       throw new Error("Permission Denied");
     }
-    const uploadProduct = new productModel(req.body);
-    const saveProduct = await uploadProduct.save();
+
+    // 🔹 Get Cloudinary image URLs
+    const imageUrls = req.files?.map(file => file.path) || [];
+
+    // 🔹 Create product using body + images
+    const product = new productModel({
+      ...req.body,
+      productImage: imageUrls,
+    });
+
+    const saveProduct = await product.save();
+    console.log("Product saved:", saveProduct);
 
     res.status(200).json({
       message: "Product saved successfully",
@@ -16,7 +26,9 @@ const uploadProduct = async (req, res) => {
       error: false,
       data: saveProduct,
     });
+
   } catch (err) {
+    console.log("upload product error:", err);
     res.status(400).json({
       message: err.message || err,
       success: false,
@@ -24,6 +36,7 @@ const uploadProduct = async (req, res) => {
     });
   }
 };
+
 
 // 📌 Update Product
 const updateProduct = async (req, res) => {
@@ -31,8 +44,20 @@ const updateProduct = async (req, res) => {
     if (!(await uploadProductPermission(req.userId))) {
       throw new Error("Permission Denied");
     }
+
     const { _id, ...restBody } = req.body;
-    const updatedProduct = await productModel.findByIdAndUpdate(_id, restBody);
+
+    // if new images uploaded
+    if (req.files && req.files.length > 0) {
+      const imageUrls = req.files.map(file => file.path);
+      restBody.productImage = imageUrls;
+    }
+
+    const updatedProduct = await productModel.findByIdAndUpdate(
+      _id,
+      restBody,
+      { new: true }
+    );
 
     res.status(200).json({
       message: "Product updated successfully",
@@ -40,6 +65,7 @@ const updateProduct = async (req, res) => {
       error: false,
       data: updatedProduct,
     });
+
   } catch (err) {
     res.status(400).json({
       message: err.message || err,
@@ -48,6 +74,7 @@ const updateProduct = async (req, res) => {
     });
   }
 };
+
 
 // 📌 Get All Products
 const getAllProducts = async (req, res) => {

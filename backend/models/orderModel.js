@@ -26,7 +26,7 @@ const orderSchema = new mongoose.Schema({
   paymentMethod: { type: String, enum: ["cod", "card"], default: "cod" },
   paymentStatus: { type: String, enum: ["pending", "paid"], default: "pending" },
   totalAmount: { type: Number, required: true },
-  orderStatus: { type: String, enum: ["placed", "processing", "shipped", "delivered"], default: "placed" },
+  orderStatus: { type: String, enum: ["placed", "processing", "shipped", "delivered", "cancelled"], default: "placed" },
   key: { type: String },
   razorpayOrderId: {type: String},
   createdAt: { type: Date, default: Date.now }

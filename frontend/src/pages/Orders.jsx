@@ -13,92 +13,16 @@ import {
 } from "lucide-react";
 import { formatPrice } from "../helpers/displayCurrency";
 import { LoadingSpinner } from "../components/Loader";
-import { orderApi } from "../api/orderApi"; // 👉 Uncomment when API ready
+import { useOrder } from "../context/OrderContext";
 
 const Orders = () => {
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { orders, fetchOrders, loading, error } = useOrder();
+
   const [selectedOrder, setSelectedOrder] = useState(null);
 
-  const fetchOrders = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // 👉 Replace mock with actual API call
-      const response = await orderApi.getMyOrders();
-      setOrders(response.data);
-
-      // Mock orders for testing
-      const mockOrders = [
-        {
-          _id: "1",
-          orderNumber: "ORD-2024-001",
-          date: "2024-01-15",
-          status: "delivered",
-          total: 2499,
-          items: [
-            {
-              productId: {
-                _id: "1",
-                productName: "Wireless Bluetooth Headphones",
-                productImage: [
-                  "https://images.pexels.com/photos/3394650/pexels-photo-3394650.jpeg",
-                ],
-                sellingPrice: 1999,
-              },
-              quantity: 1,
-            },
-          ],
-          shippingAddress: {
-            fullName: "John Doe",
-            address: "123 Main Street",
-            city: "Mumbai",
-            state: "Maharashtra",
-            pincode: "400001",
-          },
-        },
-        {
-          _id: "2",
-          orderNumber: "ORD-2024-002",
-          date: "2024-01-20",
-          status: "shipped",
-          total: 1299,
-          items: [
-            {
-              productId: {
-                _id: "2",
-                productName: "Smart Watch",
-                productImage: [
-                  "https://images.pexels.com/photos/437037/pexels-photo-437037.jpeg",
-                ],
-                sellingPrice: 1199,
-              },
-              quantity: 1,
-            },
-          ],
-          shippingAddress: {
-            fullName: "John Doe",
-            address: "123 Main Street",
-            city: "Mumbai",
-            state: "Maharashtra",
-            pincode: "400001",
-          },
-        },
-      ];
-
-      //setOrders(mockOrders);
-    } catch (err) {
-      console.error("Error fetching orders:", err);
-      setError("Failed to load your orders. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
   useEffect(() => {
     fetchOrders();
-  }, []);
+  }, [fetchOrders]);
 
   const getStatusIcon = (status) => {
     switch (status) {

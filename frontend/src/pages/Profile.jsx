@@ -19,12 +19,12 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { formatPrice } from '../helpers/displayCurrency';
 import { LoadingSpinner } from '../components/Loader';
-import { orderApi } from '../api/orderApi';
+import { useOrder } from "../context/OrderContext";
+import { useWishlist } from '../context/WishlistContext';
 
 const Profile = () => {
   const { user, updateProfile } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
-  const [loading, setLoading] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -44,10 +44,9 @@ const Profile = () => {
     pincode: '',
     phone: ''
   });
-  const [orders, setOrders] = useState([]);
-  const [ordersLoading, setOrdersLoading] = useState(false);
-  const [ordersError, setOrdersError] = useState(null);
+  const { orders, fetchOrders, loading, error } = useOrder();
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const { wishlist, toggleWishlist } = useWishlist();
 
   useEffect(() => {
     if (user) {
@@ -90,19 +89,6 @@ const Profile = () => {
       }
     ];
     setAddresses(mockAddresses);
-  };
-
-  const fetchOrders = async () => {
-    setOrdersLoading(true);
-    setOrdersError(null);
-    try {
-      const response = await orderApi.getMyOrders();
-      setOrders(response.data);
-    } catch (err) {
-      setOrdersError('Failed to load orders');
-    } finally {
-      setOrdersLoading(false);
-    }
   };
 
   const handleInputChange = (e) => {
@@ -333,10 +319,10 @@ const Profile = () => {
               {activeTab === 'orders' && (
                 <div className="p-6">
                   <h2 className="text-xl font-semibold text-gray-900 mb-6">Order History</h2>
-                  {ordersLoading ? (
+                  {loading ? (
                     <div className="py-8 text-center"><LoadingSpinner text="Loading your orders..." /></div>
-                  ) : ordersError ? (
-                    <div className="py-8 text-center text-red-500">{ordersError}</div>
+                  ) : error ? (
+                    <div className="py-8 text-center text-red-500">{error}</div>
                   ) : orders.length === 0 ? (
                     <div className="py-8 text-center text-gray-500">No orders found.</div>
                   ) : (
@@ -465,7 +451,7 @@ const Profile = () => {
                   <h2 className="text-xl font-semibold text-gray-900 mb-6">My Wishlist</h2>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {mockWishlist.map((product) => (
+                    {wishlist.map((product) => (
                       <div key={product._id} className="border border-gray-200 rounded-lg p-4">
                         <img
                           src={product.productImage[0]}

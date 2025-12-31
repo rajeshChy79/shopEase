@@ -2,7 +2,11 @@ import API from './axios';
 
 export const productApi = {
   uploadProduct: async (productData) => {
-    const response = await API.post('/api/product/upload', productData);
+    const response = await API.post('/api/product/upload', productData,{
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  });
     return response.data;
   },
 

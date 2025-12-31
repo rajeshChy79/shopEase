@@ -37,6 +37,13 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true, // supports activate/deactivate feature
     },
+  wishlist: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Product",
+      unique: true,
+      default:[],
+    }],
   },
   {
     timestamps: true,

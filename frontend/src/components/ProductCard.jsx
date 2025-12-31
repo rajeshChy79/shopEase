@@ -1,15 +1,33 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingCart, Heart, Star } from 'lucide-react';
-import { formatPrice } from '../helpers/displayCurrency';
-import { useCart } from '../context/CartContext';
-import { useAuth } from '../context/AuthContext';
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { ShoppingCart, Heart, Star } from "lucide-react";
+import { formatPrice } from "../helpers/displayCurrency";
+import { useCart } from "../context/CartContext";
+import { useAuth } from "../context/AuthContext";
+import { useWishlist } from "../context/WishlistContext";
 
-const ProductCard = ({ product, className = '' }) => {
-  const { addToCart } = useCart();
+const ProductCard = ({ product, className = "" }) => {
+  const { addToCart, removeFromCart, cartItems } = useCart();
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [showBuyNowMenu, setShowBuyNowMenu] = useState(false);
+
+  const { wishlistIds, toggleWishlist } = useWishlist();
+
+const isWishlisted = product ? wishlistIds.includes(String(product._id)) : false;
+
+  const cartItem = cartItems.find(
+    (item) => String(item.productId._id) === String(product._id)
+  );
+
+  const handleWishlist = (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  setIsWishlisted((prev) => !prev);
+};
+
+
+  const isInCart = Boolean(cartItem);
 
   const handleAddToCart = async (e) => {
     e.preventDefault();
@@ -31,7 +49,7 @@ const ProductCard = ({ product, className = '' }) => {
     e.stopPropagation();
 
     if (!isAuthenticated()) {
-      navigate('/login');
+      navigate("/login");
       return;
     }
 
@@ -42,7 +60,7 @@ const ProductCard = ({ product, className = '' }) => {
     });
 
     // Redirect to checkout
-    navigate('/checkout');
+    navigate("/checkout");
   };
 
   return (
@@ -53,25 +71,58 @@ const ProductCard = ({ product, className = '' }) => {
       {/* Product Image */}
       <div className="relative aspect-square overflow-hidden bg-gray-100">
         <img
-          src={(Array.isArray(product.productImage) && product.productImage[0]) || '/api/placeholder/300/300'}
-          alt={product.productName || 'Product'}
+          src={
+            (Array.isArray(product.productImage) && product.productImage[0]) ||
+            "/api/placeholder/300/300"
+          }
+          alt={product.productName || "Product"}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
 
         {/* Overlay Actions */}
-        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
-          <div className="flex space-x-2">
-            <button
-              onClick={handleAddToCart}
-              className="p-2 bg-white rounded-full shadow-lg hover:bg-primary-50 transition-colors"
-            >
-              <ShoppingCart className="w-5 h-5 text-primary-600" />
-            </button>
-            <button className="p-2 bg-white rounded-full shadow-lg hover:bg-red-50 transition-colors">
-              <Heart className="w-5 h-5 text-red-500" />
-            </button>
-          </div>
-        </div>
+<div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+  <div className="flex space-x-2">
+
+    {!isInCart ? (
+      <button
+        onClick={handleAddToCart}
+        className="p-2 bg-white rounded-full shadow-lg hover:bg-primary-50 transition-colors"
+        title="Add to Cart"
+      >
+        <ShoppingCart className="w-5 h-5 text-primary-600" />
+      </button>
+    ) : (
+      <button
+        onClick={(e) => {
+          e.preventDefault();
+          navigate("/cart");
+        }}
+        className="p-2 bg-green-100 rounded-full shadow-lg hover:bg-green-200 transition-colors"
+        title="Go to Cart"
+      >
+        <ShoppingCart className="w-5 h-5 text-green-600" />
+      </button>
+    )}
+
+    {/* ❤️ Wishlist Button */}
+<button
+  onClick={(e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleWishlist(product._id);
+  }}
+>
+  <Heart
+    className={`w-5 h-5 ${
+      isWishlisted ? "text-red-600 fill-current" : "text-gray-400"
+    }`}
+  />
+</button>
+
+
+  </div>
+</div>
+
 
         {/* Sale Badge */}
         {product.sellingPrice < product.price && (
@@ -105,14 +156,18 @@ const ProductCard = ({ product, className = '' }) => {
                 key={i}
                 className={`w-4 h-4 ${
                   i < Number(product.rating || 4)
-                    ? 'text-yellow-400 fill-current'
-                    : 'text-gray-300'
+                    ? "text-yellow-400 fill-current"
+                    : "text-gray-300"
                 }`}
               />
             ))}
           </div>
           <span className="ml-2 text-sm text-gray-600">
-            ({Array.isArray(product.reviews) ? product.reviews.length : product.reviews || 0} reviews)
+            (
+            {Array.isArray(product.reviews)
+              ? product.reviews.length
+              : product.reviews || 0}{" "}
+            reviews)
           </span>
         </div>
 
@@ -131,20 +186,37 @@ const ProductCard = ({ product, className = '' }) => {
 
           {product.sellingPrice < product.price && (
             <div className="text-sm text-green-600 font-medium">
-              {Math.round(((product.price - product.sellingPrice) / product.price) * 100)}% off
+              {Math.round(
+                ((product.price - product.sellingPrice) / product.price) * 100
+              )}
+              % off
             </div>
           )}
         </div>
 
         {/* Add to Cart + Buy Now Buttons */}
         <div className="grid grid-cols-2 gap-2 mt-4">
-          <button
-            onClick={handleAddToCart}
-            className="bg-primary-600 hover:bg-primary-700 text-white py-2 px-4 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
-          >
-            <ShoppingCart className="w-4 h-4" />
-            <span>Add to Cart</span>
-          </button>
+          {!isInCart ? (
+            <button
+              onClick={handleAddToCart}
+              className="bg-primary-600 hover:bg-primary-700 text-white py-2 px-4 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
+            >
+              <ShoppingCart className="w-4 h-4" />
+              <span>Add to Cart</span>
+            </button>
+          ) : (
+            <button
+              onClick={async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                await removeFromCart(product._id);
+              }}
+              className="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg font-medium transition-colors flex items-center justify-center"
+            >
+              Remove
+            </button>
+          )}
+
           <button
             onClick={handleBuyNow}
             className="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg font-medium transition-colors flex items-center justify-center"
