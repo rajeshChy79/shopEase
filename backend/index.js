@@ -8,7 +8,7 @@ const cors = require("cors");
 
 // ✅ Use one consistent CORS config everywhere
 const corsOptions = {
-  origin: "http://localhost:5173", // or process.env.FRONTEND_URL
+  origin: "https://shopease-frontend-raja.onrender.com", // or process.env.FRONTEND_URL
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
